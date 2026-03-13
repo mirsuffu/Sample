@@ -106,6 +106,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); }
 #conn-status.online #conn-dot { background: #6bcb6b; }
 #conn-status.online #conn-label { color: #6bcb6b; }
 @keyframes pulse-dot { 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:0.4; transform:scale(0.7); } }
+#name-input:focus { border-color: var(--accent); outline: none; }
+#mobile-topbar-menu { display:none; position:fixed; top:56px; right:10px; z-index:9999; background:var(--surface-el); border:1px solid var(--border); border-radius:12px; padding:6px; min-width:175px; box-shadow:0 8px 28px var(--shadow); flex-direction:column; gap:2px; }
+#mobile-topbar-menu.open { display:flex; }
+.mtm-item { background:none; border:none; color:var(--text); font-family:var(--sans); font-size:13px; font-weight:500; padding:10px 14px; border-radius:8px; cursor:pointer; text-align:left; width:100%; transition:background 0.15s; }
+.mtm-item:hover,.mtm-item:active { background:rgba(124,111,205,0.12); }
 .icon-btn {
   width: 36px; height: 36px; border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
@@ -176,6 +181,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); }
   #topbar-date { display: none; }
   #topbar-actions { gap: 4px; }
   #conn-status { display: none; }
+  #fullscreen-btn, #theme-toggle-btn, #editor-toggle-btn { display: none !important; }
+  #hamburger-btn { display: flex !important; }
   .icon-btn { width: 32px; height: 32px; font-size: 14px; }
 
   /* Planner - card layout on mobile */
@@ -210,10 +217,31 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); }
   #schedule-section .section-body { flex-direction: column; overflow-y: auto; padding: 12px; }
   .schedule-card { min-height: 160px; flex: none; }
 
-  /* Metrics - single column */
-  .metrics-grid { grid-template-columns: 1fr !important; }
-  .metric-card { min-height: auto; }
+  /* Metrics - vertical stack */
+  #metrics-section .section-body { display:flex; flex-direction:column; overflow-y:auto; gap:10px; padding:10px; }
+  .metric-card { min-height:120px; }
   .today-ticks-grid { grid-template-columns: 1fr 1fr; }
+  /* Test cards */
+  #test-cards { display:flex; flex-direction:column; gap:10px; padding:10px; }
+  .tcard { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
+  .tcard-row1 { display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap; }
+  .tcard-date { font-family:var(--mono); font-size:11px; font-weight:700; color:var(--text2); }
+  .tcard-subj { font-weight:700; font-size:13px; flex:1; }
+  .tcard-row2 { display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap; }
+  .tcard-coverage { font-size:12px; color:var(--text2); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tcard-score { font-size:12px; font-weight:600; color:var(--accent); }
+  .tcard-stars { font-size:11px; letter-spacing:-1px; }
+  .tcard-comment { font-size:11px; color:var(--text2); margin-top:6px; border-top:1px solid var(--border); padding-top:6px; }
+  .tcard-actions { display:flex; gap:8px; margin-top:8px; justify-content:flex-end; }
+  .tcard-edit { font-size:12px; color:var(--accent); cursor:pointer; padding:4px 10px; border-radius:6px; border:1px solid var(--accent); background:none; }
+  .tcard-del  { font-size:12px; color:var(--danger); cursor:pointer; padding:4px 10px; border-radius:6px; border:1px solid var(--danger); background:none; }
+  #test-cards-empty { text-align:center; padding:40px 20px; color:var(--text2); font-size:13px; }
+  /* Subjects mobile */
+  .chapter-row { flex-wrap:wrap; gap:4px; padding:8px 0; border-bottom:1px solid var(--border); }
+  .chapter-row:last-child { border-bottom:none; }
+  .chapter-name { font-size:13px; font-weight:600; width:100%; display:block; margin-bottom:2px; }
+  .chapter-name-input { font-size:13px; width:100%; }
+  .chapter-ratings-mobile { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 
   /* Subjects - full width */
   .chapter-row { flex-wrap: wrap; gap: 6px; }
@@ -667,8 +695,8 @@ input, textarea, .plan-input { user-select: text; -webkit-user-select: text; }
   <!-- TOP BAR -->
   <div id="topbar">
     <div id="topbar-brand">
-      <div class="brand-name">JG. SUFFU</div>
-      <div class="brand-tag">Not to mention, but someone genuinely wants your success.</div>
+      <div class="brand-name" id="topbar-brand-name">JG. SUFFU</div>
+      <div class="brand-tag">Not to mention, but someone genuinely wants your success. — JG. SUFFU</div>
     </div>
     <div id="topbar-center">
       <div id="days-remaining">— Days</div>
@@ -682,7 +710,13 @@ input, textarea, .plan-input { user-select: text; -webkit-user-select: text; }
       <button class="icon-btn" id="fullscreen-btn" title="Toggle Fullscreen">⛶</button>
       <button class="icon-btn" id="theme-toggle-btn" title="Toggle theme">🌙</button>
       <button class="icon-btn" id="editor-toggle-btn" title="Toggle Editor Mode (Ctrl+Shift+E)">🔒</button>
+      <button class="icon-btn" id="hamburger-btn" title="Menu" style="display:none;">☰</button>
     </div>
+  </div>
+  <div id="mobile-topbar-menu">
+    <button class="mtm-item" id="mtm-fullscreen">⧆  Fullscreen</button>
+    <button class="mtm-item" id="mtm-theme">🌙  Toggle Theme</button>
+    <button class="mtm-item" id="mtm-editor">🔒  Editor Mode</button>
   </div>
 
   <!-- MAIN -->
@@ -754,6 +788,7 @@ input, textarea, .plan-input { user-select: text; -webkit-user-select: text; }
             </thead>
             <tbody id="test-tbody"></tbody>
           </table>
+          <div id="test-cards" style="display:none;flex-direction:column;gap:10px;padding:10px;"></div>
         </div>
       </div>
 
@@ -855,6 +890,13 @@ input, textarea, .plan-input { user-select: text; -webkit-user-select: text; }
           </div>
           <div class="settings-group">
             <div class="settings-group-title">Appearance</div>
+            <div class="settings-row">
+              <label class="settings-label">Your Name<span class="lock-note">Shown in topbar</span></label>
+              <div style="display:flex;gap:8px;flex:1;max-width:260px;">
+                <input type="text" id="setting-user-name" placeholder="Your name" style="flex:1;">
+                <button class="btn btn-accent" id="save-name-btn" style="padding:6px 14px;font-size:12px;white-space:nowrap;">Save</button>
+              </div>
+            </div>
             <div class="settings-row">
               <label class="settings-label">Theme</label>
               <label class="toggle-switch" id="theme-toggle-label">
@@ -1192,7 +1234,7 @@ function defaultData() {
   const exam  = new Date(now.getFullYear(), now.getMonth()+4, now.getDate());
   const examD = exam.getFullYear()+'-'+pad(exam.getMonth()+1)+'-'+pad(exam.getDate());
   return {
-    settings: { examDate: examD, plannerStartDate: today, theme:'dark' },
+    settings: { examDate: examD, plannerStartDate: today, theme:'dark', userName:'' },
     subjects: SUBJECTS.map(id => ({ id, name:SUBJECT_LABELS[id], chapters:[] })),
     planner: [],
     tests: [],
@@ -1218,6 +1260,7 @@ function normalizeData() {
   if (!data.settings.plannerStartDate) data.settings.plannerStartDate = def.settings.plannerStartDate;
   if (!data.settings.examDate)         data.settings.examDate         = def.settings.examDate;
   if (!data.settings.theme)            data.settings.theme            = 'dark';
+  if (data.settings.userName === undefined) data.settings.userName = '';
   // Auto-fix swapped dates (start >= exam → reset to sane defaults)
   if (data.settings.plannerStartDate >= data.settings.examDate) {
     data.settings.plannerStartDate = def.settings.plannerStartDate;
@@ -1312,6 +1355,7 @@ function updateTopBar() {
   else el.textContent='Exam\'s done! Results await 🤞';
   el.style.color=days<=30?'var(--danger)':days<=90?'var(--warning)':'var(--text)';
   document.getElementById('topbar-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  (function(){var un=data.settings&&data.settings.userName,bl=document.getElementById('topbar-brand-name');if(bl)bl.textContent=un||'JG. SUFFU';})();
 }
 
 // ============================================================
@@ -1496,40 +1540,71 @@ let testEditId = null;
 let testEditConfidenceVal = 3;
 
 function renderTestTable() {
-  const tbody=document.getElementById('test-tbody'); tbody.innerHTML='';
+  var mobile=isMobile();
+  var table=document.getElementById('test-table');
+  var cards=document.getElementById('test-cards');
+  var tbody=document.getElementById('test-tbody');
+  table.style.display=mobile?'none':'';
+  cards.style.display=mobile?'flex':'none';
+  tbody.innerHTML=''; cards.innerHTML='';
+  var empty='No test records yet. Hit + Add Test to log one.';
   if(!data.tests||data.tests.length===0){
-    tbody.innerHTML='<tr><td colspan="8" class="empty-test">No test records yet. Click "+ Add Test" to log one.</td></tr>'; return;
+    if(mobile)cards.innerHTML='<div id="test-cards-empty">'+empty+'</div>';
+    else tbody.innerHTML='<tr><td colspan="8" class="empty-test">'+empty+'</td></tr>';
+    return;
   }
-  const sorted=[...data.tests].sort((a,b)=>b.date.localeCompare(a.date));
-  sorted.forEach(t=>{
-    const tr=document.createElement('tr'); tr.className='test-row';
-    const stars='★'.repeat(t.confidence||0)+'☆'.repeat(5-(t.confidence||0));
-    const subjLabel=t.subject==='all'?'All Subjects':(SUBJECT_LABELS[t.subject]||t.subject);
-    tr.innerHTML=`
-      <td style="font-family:var(--mono);font-size:12px;">${formatDateShort(t.date)}</td>
-      <td style="font-weight:600;">${subjLabel}</td>
-      <td style="font-size:12px;color:var(--text2);">${t.coverage||'—'}</td>
-      <td><span class="test-type-badge test-type-${t.type}">${t.type}</span></td>
-      <td class="score-cell">${t.score||'—'}</td>
-      <td><span class="test-star-display">${stars}</span></td>
-      <td class="comment-cell" title="${(t.comment||'').replace(/"/g,'&quot;')}">${t.comment||'—'}</td>
-      <td style="display:flex;gap:6px;align-items:center;">
-        <span class="test-edit-btn" data-id="${t.id}" title="Edit" style="color:var(--accent);opacity:0;cursor:pointer;font-size:13px;">✎</span>
-        <span class="test-del" data-id="${t.id}" title="Delete">✕</span>
-      </td>`;
-    tr.querySelector('.test-del').addEventListener('click',e=>{
-      const id=e.target.dataset.id;
-      data.tests=data.tests.filter(x=>x.id!==id);
-      saveData(); renderTestTable();
+  var sorted=[].concat(data.tests).sort(function(a,b){return b.date.localeCompare(a.date);});
+  if(mobile){
+    sorted.forEach(function(t){
+      var subjLabel=t.subject==='all'?'All Subjects':(SUBJECT_LABELS[t.subject]||t.subject);
+      var stars='★'.repeat(t.confidence||0)+'☆'.repeat(5-(t.confidence||0));
+      var card=document.createElement('div'); card.className='tcard';
+      var r1=document.createElement('div'); r1.className='tcard-row1';
+      var de=document.createElement('span'); de.className='tcard-date'; de.textContent=formatDateShort(t.date);
+      var se=document.createElement('span'); se.className='tcard-subj'; se.textContent=subjLabel;
+      var bg=document.createElement('span'); bg.className='test-type-badge test-type-'+t.type; bg.textContent=t.type;
+      r1.append(de,se,bg); card.appendChild(r1);
+      var r2=document.createElement('div'); r2.className='tcard-row2';
+      var co=document.createElement('span'); co.className='tcard-coverage'; co.textContent=t.coverage||'—';
+      var sc=document.createElement('span'); sc.className='tcard-score'; sc.textContent=t.score?'🎯 '+t.score:'';
+      var st=document.createElement('span'); st.className='tcard-stars'; st.textContent=stars;
+      r2.append(co,sc,st); card.appendChild(r2);
+      if(t.comment){var cm=document.createElement('div');cm.className='tcard-comment';cm.textContent=t.comment;card.appendChild(cm);}
+      var acts=document.createElement('div'); acts.className='tcard-actions';
+      var eb=document.createElement('button'); eb.className='tcard-edit'; eb.textContent='✎ Edit';
+      var db=document.createElement('button'); db.className='tcard-del';  db.textContent='✕ Delete';
+      (function(id){eb.addEventListener('click',function(){openTestEditModal(id);});
+       db.addEventListener('click',function(){data.tests=data.tests.filter(function(x){return x.id!==id;});saveData();renderTestTable();});
+      })(t.id);
+      acts.append(eb,db); card.appendChild(acts);
+      cards.appendChild(card);
     });
-    tr.querySelector('.test-edit-btn').addEventListener('click',e=>openTestEditModal(e.target.dataset.id));
-    tbody.appendChild(tr);
-  });
-  // Show action buttons on row hover
-  tbody.querySelectorAll('.test-row').forEach(row=>{
-    row.addEventListener('mouseenter',()=>{ row.querySelectorAll('.test-edit-btn,.test-del').forEach(b=>b.style.opacity='1'); });
-    row.addEventListener('mouseleave',()=>{ row.querySelectorAll('.test-edit-btn,.test-del').forEach(b=>b.style.opacity='0'); });
-  });
+  } else {
+    sorted.forEach(function(t){
+      var tr=document.createElement('tr'); tr.className='test-row';
+      var stars='★'.repeat(t.confidence||0)+'☆'.repeat(5-(t.confidence||0));
+      var subjLabel=t.subject==='all'?'All Subjects':(SUBJECT_LABELS[t.subject]||t.subject);
+      tr.innerHTML='<td style="font-family:var(--mono);font-size:12px;">'+formatDateShort(t.date)+'</td>'
+        +'<td style="font-weight:600;">'+subjLabel+'</td>'
+        +'<td style="font-size:12px;color:var(--text2);">'+( t.coverage||'—')+'</td>'
+        +'<td><span class="test-type-badge test-type-'+t.type+'">'+t.type+'</span></td>'
+        +'<td class="score-cell">'+(t.score||'—')+'</td>'
+        +'<td><span class="test-star-display">'+stars+'</span></td>'
+        +'<td class="comment-cell" title="'+(t.comment||'').replace(/"/g,'&quot;')+'">'+(t.comment||'—')+'</td>'
+        +'<td style="display:flex;gap:6px;align-items:center;">'
+        +'<span class="test-edit-btn" data-id="'+t.id+'" title="Edit" style="color:var(--accent);opacity:0;cursor:pointer;font-size:13px;">✎</span>'
+        +'<span class="test-del" data-id="'+t.id+'" title="Delete">✕</span></td>';
+      (function(id){
+        tr.querySelector('.test-del').addEventListener('click',function(){data.tests=data.tests.filter(function(x){return x.id!==id;});saveData();renderTestTable();});
+        tr.querySelector('.test-edit-btn').addEventListener('click',function(){openTestEditModal(id);});
+      })(t.id);
+      tbody.appendChild(tr);
+    });
+    tbody.querySelectorAll('.test-row').forEach(function(row){
+      row.addEventListener('mouseenter',function(){row.querySelectorAll('.test-edit-btn,.test-del').forEach(function(b){b.style.opacity='1';});});
+      row.addEventListener('mouseleave',function(){row.querySelectorAll('.test-edit-btn,.test-del').forEach(function(b){b.style.opacity='0';});});
+    });
+  }
 }
 
 function openTestEditModal(id) {
@@ -1659,8 +1734,81 @@ function makeStarGroup(container, initVal, onChangeFn) {
   }
 }
 
-function renderSubjects() { openSubjects.clear(); renderSubjectsInternal(); }
-
+function renderSubjectsInternal() {
+  var body=document.getElementById('subjects-body'); body.innerHTML='';
+  var mobile=isMobile();
+  data.subjects.forEach(function(subj){
+    var isOpen=openSubjects.has(subj.id);
+    var block=document.createElement('div');
+    block.className='subject-block'+(isOpen?' open':'');
+    block.dataset.subjid=subj.id;
+    var avgConf=subj.chapters.length?(subj.chapters.reduce(function(a,c){return a+c.confidence;},0)/subj.chapters.length).toFixed(1):'—';
+    var flags=subj.chapters.filter(function(c){return c.difficulty>=3&&c.confidence<=2;}).length;
+    var header=document.createElement('div'); header.className='subject-header';
+    header.innerHTML='<span class="subject-name">'+subj.name+'</span>'
+      +'<div class="subject-meta"><span>📖 '+subj.chapters.length+' chapters</span>'
+      +'<span>⭐ Avg Conf: '+avgConf+'</span>'
+      +(flags?'<span style="color:var(--warning)">⚑ '+flags+' flagged</span>':'')+'</div>'
+      +'<span class="subject-chevron">▶</span>';
+    header.addEventListener('click',function(){var n=block.classList.toggle('open');if(n)openSubjects.add(subj.id);else openSubjects.delete(subj.id);});
+    var bodyEl=document.createElement('div'); bodyEl.className='subject-body';
+    var chapterList=document.createElement('div'); chapterList.className='chapter-list';
+    if(subj.chapters.length===0&&!editorUnlocked){chapterList.innerHTML='<div class="empty-chapters">No chapters yet. Unlock Editor Mode to add chapters.</div>';}
+    subj.chapters.forEach(function(ch,ci){
+      var row=document.createElement('div'); row.className='chapter-row';
+      // name/input
+      if(editorUnlocked){
+        var inp=document.createElement('input'); inp.type='text'; inp.className='chapter-name-input'; inp.value=ch.name;
+        inp.addEventListener('change',function(){ch.name=inp.value;saveData();});
+        inp.addEventListener('keydown',function(e){if(e.key==='Enter'){ch.name=inp.value;saveData();inp.blur();}});
+        row.appendChild(inp);
+      } else {
+        var nm=document.createElement('span'); nm.className='chapter-name'; nm.textContent=ch.name; row.appendChild(nm);
+      }
+      var flag=document.createElement('span'); flag.className='priority-flag'; flag.innerHTML=getPriorityFlag(ch.difficulty,ch.confidence);
+      var dl=document.createElement('span'); dl.className='rating-label'; dl.textContent='Diff';
+      var ds=document.createElement('span'); ds.className='star-group';
+      (function(ch,flag){makeStarGroup(ds,ch.difficulty,function(v){ch.difficulty=v;saveData();flag.innerHTML=getPriorityFlag(ch.difficulty,ch.confidence);refreshSubjectMeta(subj,header);});})(ch,flag);
+      var cl=document.createElement('span'); cl.className='rating-label'; cl.textContent='Conf';
+      var cs=document.createElement('span'); cs.className='star-group';
+      (function(ch,flag){makeStarGroup(cs,ch.confidence,function(v){ch.confidence=v;saveData();flag.innerHTML=getPriorityFlag(ch.difficulty,ch.confidence);refreshSubjectMeta(subj,header);});})(ch,flag);
+      if(mobile){
+        var rrow=document.createElement('div'); rrow.className='chapter-ratings-mobile';
+        rrow.append(dl,ds,cl,cs,flag);
+        if(editorUnlocked){
+          var del=document.createElement('span'); del.className='chapter-del'; del.textContent='✕'; del.title='Delete';
+          (function(ci){del.addEventListener('click',function(){subj.chapters.splice(ci,1);saveData();renderSubjectsInternal();});})(ci);
+          var up=document.createElement('span'); up.className='chapter-move'; up.textContent='▲'; up.style.cssText='cursor:pointer;font-size:10px;color:var(--text2);padding:0 2px;';
+          (function(ci){up.addEventListener('click',function(){if(ci>0){var t=subj.chapters[ci-1];subj.chapters[ci-1]=subj.chapters[ci];subj.chapters[ci]=t;saveData();renderSubjectsInternal();}});})(ci);
+          var dn=document.createElement('span'); dn.className='chapter-move'; dn.textContent='▼'; dn.style.cssText='cursor:pointer;font-size:10px;color:var(--text2);padding:0 2px;';
+          (function(ci){dn.addEventListener('click',function(){if(ci<subj.chapters.length-1){var t=subj.chapters[ci+1];subj.chapters[ci+1]=subj.chapters[ci];subj.chapters[ci]=t;saveData();renderSubjectsInternal();}});})(ci);
+          rrow.append(up,dn,del);
+        }
+        row.appendChild(rrow);
+      } else {
+        cl.style.marginLeft='10px';
+        row.append(flag,dl,ds,cl,cs);
+        if(editorUnlocked){
+          var del=document.createElement('span'); del.className='chapter-del'; del.textContent='✕'; del.title='Delete';
+          (function(ci){del.addEventListener('click',function(){subj.chapters.splice(ci,1);saveData();renderSubjectsInternal();});})(ci);
+          var up=document.createElement('span'); up.className='chapter-move'; up.textContent='▲'; up.style.cssText='cursor:pointer;font-size:10px;color:var(--text2);padding:0 2px;';
+          (function(ci){up.addEventListener('click',function(){if(ci>0){var t=subj.chapters[ci-1];subj.chapters[ci-1]=subj.chapters[ci];subj.chapters[ci]=t;saveData();renderSubjectsInternal();}});})(ci);
+          var dn=document.createElement('span'); dn.className='chapter-move'; dn.textContent='▼'; dn.style.cssText='cursor:pointer;font-size:10px;color:var(--text2);padding:0 2px;';
+          (function(ci){dn.addEventListener('click',function(){if(ci<subj.chapters.length-1){var t=subj.chapters[ci+1];subj.chapters[ci+1]=subj.chapters[ci];subj.chapters[ci]=t;saveData();renderSubjectsInternal();}});})(ci);
+          row.append(up,dn,del);
+        }
+      }
+      chapterList.appendChild(row);
+    });
+    bodyEl.appendChild(chapterList);
+    if(editorUnlocked){
+      var ab=document.createElement('button'); ab.className='subject-add-btn'; ab.textContent='+ Add Chapter';
+      (function(subj){ab.addEventListener('click',function(){openSubjects.add(subj.id);subj.chapters.push({id:'ch'+Date.now(),name:'New Chapter',difficulty:3,confidence:3});saveData();renderSubjectsInternal();});})(subj);
+      bodyEl.appendChild(ab);
+    }
+    block.append(header,bodyEl); body.appendChild(block);
+  });
+}
 function renderSubjectsInternal() {
   const body=document.getElementById('subjects-body'); body.innerHTML='';
   data.subjects.forEach(subj=>{
@@ -1874,6 +2022,7 @@ function drawDonut(pct) {
 function renderSettings() {
   document.getElementById('setting-exam-date').value=data.settings.examDate||'';
   document.getElementById('setting-start-date').value=data.settings.plannerStartDate||'';
+  (function(){var nf=document.getElementById('setting-user-name');if(nf)nf.value=data.settings.userName||'';})();
   const isLight=data.settings.theme==='light';
   document.getElementById('theme-track').classList.toggle('on',isLight);
   document.getElementById('theme-toggle-text').textContent=isLight?'Light Mode':'Dark Mode';
@@ -2176,6 +2325,20 @@ function showWelcomeModal(title, bodyText, typeSpeed) {
   });
 }
 
+function showNamePrompt(){
+  var modal=document.getElementById('name-modal'); if(!modal)return;
+  modal.classList.add('show');
+  setTimeout(function(){var i=document.getElementById('name-input');if(i)i.focus();},300);
+  function doSave(){
+    var n=(document.getElementById('name-input').value||'').trim();
+    data.settings.userName=n; saveData(); updateTopBar();
+    modal.classList.remove('show');
+    setTimeout(checkAndShowWelcome,350);
+  }
+  document.getElementById('name-save-btn').onclick=doSave;
+  document.getElementById('name-input').onkeydown=function(e){if(e.key==='Enter')doSave();};
+}
+
 function checkAndShowWelcome() {
   const hasLaunched = localStorage.getItem('jgsuffu_launched');
   const lastSeen = localStorage.getItem('jgsuffu_daily_seen');
@@ -2185,6 +2348,7 @@ function checkAndShowWelcome() {
     // First ever launch
     localStorage.setItem('jgsuffu_launched', '1');
     localStorage.setItem('jgsuffu_daily_seen', today);
+    if(!data.settings.userName){showNamePrompt();return;}
     showWelcomeModal(FIRST_LAUNCH_TITLE, FIRST_LAUNCH_BODY, 22);
   } else if (lastSeen !== today) {
     // First open today
@@ -2241,6 +2405,25 @@ function setupEvents() {
   document.getElementById('editor-modal').addEventListener('click',e=>{if(e.target===document.getElementById('editor-modal'))closeEditorModal();});
   document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.shiftKey&&e.key==='E'){e.preventDefault();handleEditorToggle();}});
   document.getElementById('save-settings-btn').addEventListener('click',saveSettings);
+  // Save name from settings
+  (function(){
+    var snb=document.getElementById('save-name-btn'),sni=document.getElementById('setting-user-name');
+    if(snb)snb.addEventListener('click',function(){
+      var n=(sni?sni.value:'').trim(); data.settings.userName=n; saveData(); updateTopBar();
+      showToast(n?'Hey '+n+'! Name updated 👋':'Name cleared.','success');
+    });
+    if(sni)sni.addEventListener('keydown',function(e){if(e.key==='Enter'&&snb)snb.click();});
+  })();
+  // Hamburger menu
+  (function(){
+    var hbtn=document.getElementById('hamburger-btn'),hmenu=document.getElementById('mobile-topbar-menu');
+    if(!hbtn||!hmenu)return;
+    hbtn.addEventListener('click',function(e){e.stopPropagation();hmenu.classList.toggle('open');});
+    document.addEventListener('click',function(e){if(!hmenu.contains(e.target)&&e.target!==hbtn)hmenu.classList.remove('open');});
+    document.getElementById('mtm-fullscreen').addEventListener('click',function(){hmenu.classList.remove('open');toggleFullscreen();});
+    document.getElementById('mtm-theme').addEventListener('click',function(){hmenu.classList.remove('open');toggleTheme();var il=document.documentElement.getAttribute('data-theme')==='light';document.getElementById('mtm-theme').textContent=(il?'☀️':'🌙')+'  Toggle Theme';});
+    document.getElementById('mtm-editor').addEventListener('click',function(){hmenu.classList.remove('open');handleEditorToggle();});
+  })();
   document.getElementById('export-btn').addEventListener('click',exportData);
   document.getElementById('import-input').addEventListener('change',handleImportFile);
   document.getElementById('import-cancel-btn').addEventListener('click',()=>{pendingImportFile=null;document.getElementById('import-modal').classList.remove('show');});
@@ -2366,7 +2549,7 @@ function init() {
   let _lastMobile = window.innerWidth <= 768;
   window.addEventListener('resize', () => {
     const nowMobile = window.innerWidth <= 768;
-    if(nowMobile !== _lastMobile) { _lastMobile = nowMobile; if(currentSection==='planner') renderPlanner(); }
+    if(nowMobile !== _lastMobile) { _lastMobile=nowMobile; if(currentSection==='planner')renderPlanner(); if(currentSection==='test')renderTestTable(); if(currentSection==='subjects')renderSubjectsInternal(); }
   });
 
   if (isSessionActive()) {
@@ -2409,6 +2592,19 @@ document.addEventListener('DOMContentLoaded', init);
   </div>
 </div>
 
+
+<!-- NAME PROMPT MODAL -->
+<div class="modal-overlay" id="name-modal">
+  <div class="modal-box" style="max-width:380px;text-align:center;">
+    <div class="modal-title">Hey, Welcome here! 👋</div>
+    <p style="color:var(--text2);font-size:13px;margin:8px 0 18px;">Suffu would love to call you by...</p>
+    <input type="text" id="name-input" placeholder="Your name" autocomplete="off"
+      style="width:100%;padding:10px 14px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface-el);color:var(--text);font-size:15px;font-family:var(--sans);outline:none;box-sizing:border-box;text-align:center;">
+    <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;">
+      <button class="btn btn-accent" id="name-save-btn" style="min-width:120px;">Let's Go! 🚀</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
