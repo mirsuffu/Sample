@@ -5,37 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JG. SUFFU — CA Foundation Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<!-- Firebase v9 modular SDK -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBkJltAH3yQbxTa8cwbN_PleySVCJBDUS4",
-  authDomain: "ca-foundation-tracker-35872.firebaseapp.com",
-  projectId: "ca-foundation-tracker-35872",
-  storageBucket: "ca-foundation-tracker-35872.firebasestorage.app",
-  messagingSenderId: "245959818022",
-  appId: "1:245959818022:web:56ac8f008d8f04b9839fe7"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-enableIndexedDbPersistence(db).catch(err => {
-  if(err.code === 'failed-precondition') console.warn('Offline persistence: multiple tabs open');
-  else if(err.code === 'unimplemented') console.warn('Offline persistence not supported in this browser');
-});
-
-window._fbAuth = auth;
-window._fbSignIn = (email, password) => signInWithEmailAndPassword(auth, email, password);
-window._fbSignOut = () => signOut(auth);
-window._fbOnAuthStateChanged = (cb) => onAuthStateChanged(auth, cb);
-window._fbGetDoc = (uid) => getDoc(doc(db, 'users', uid, 'data', 'appdata'));
-window._fbSetDoc = (uid, d) => setDoc(doc(db, 'users', uid, 'data', 'appdata'), { ...d });
-<\/script>
 <style>
 /* ============================================================
    CSS VARIABLES & THEMING
@@ -124,6 +93,15 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); }
 #days-remaining { font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -0.5px; }
 #topbar-date { font-size: 11px; color: var(--text2); margin-top: 1px; }
 #topbar-actions { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
+#conn-status { display: flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; background: var(--surface-el); border: 1px solid var(--border); font-size: 11px; font-weight: 600; letter-spacing: 0.03em; color: var(--text2); cursor: default; transition: background 0.3s, color 0.3s; }
+#conn-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: #6bcb6b; transition: background 0.3s; }
+#conn-status.offline #conn-dot { background: #e05c5c; }
+#conn-status.offline #conn-label { color: #e05c5c; }
+#conn-status.syncing #conn-dot { background: var(--accent); animation: pulse-dot 1s ease-in-out infinite; }
+#conn-status.syncing #conn-label { color: var(--accent); }
+#conn-status.online #conn-dot { background: #6bcb6b; }
+#conn-status.online #conn-label { color: #6bcb6b; }
+@keyframes pulse-dot { 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:0.4; transform:scale(0.7); } }
 .icon-btn {
   width: 36px; height: 36px; border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
@@ -193,12 +171,36 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); }
   #days-remaining { font-size: 15px; }
   #topbar-date { display: none; }
   #topbar-actions { gap: 4px; }
+  #conn-status { display: none; }
   .icon-btn { width: 32px; height: 32px; font-size: 14px; }
 
-  /* Planner - horizontal scroll, sticky date col */
-  #planner-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  #planner-table { min-width: 600px; }
-  .plan-input { min-width: 60px; font-size: 11px; }
+  /* Planner - card layout on mobile */
+  #planner-table-wrap { overflow-x: unset; }
+  #planner-table { display: none; }
+  #planner-cards { display: flex; flex-direction: column; gap: 8px; padding: 8px; }
+  .pcard { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .pcard.is-sunday { border-color: var(--accent); background: var(--sunday); }
+  .pcard.is-today  { border-color: var(--today-border); background: var(--today); }
+  .pcard-header { display: flex; align-items: center; justify-content: space-between; padding: 7px 12px; background: var(--surface-el); border-bottom: 1px solid var(--border); }
+  .pcard.is-sunday .pcard-header { background: rgba(124,111,205,0.12); }
+  .pcard.is-today  .pcard-header { background: rgba(90,171,119,0.12); }
+  .pcard-date { font-family: var(--mono); font-weight: 700; font-size: 12px; }
+  .pcard-day  { font-size: 11px; color: var(--text2); }
+  .pcard.is-sunday .pcard-day { color: var(--accent); font-weight: 600; }
+  .pcard.is-today  .pcard-day { color: var(--success); font-weight: 600; }
+  .pcard-bulk { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text2); cursor: pointer; }
+  .pcard-bulk:active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .pcard-subj-row { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-bottom: 1px solid var(--border); }
+  .pcard-subj-row:last-child { border-bottom: none; }
+  .pcard-subj-label { font-size: 11px; font-weight: 600; color: var(--text2); width: 76px; flex-shrink: 0; text-transform: uppercase; letter-spacing: 0.04em; }
+  .pcard-plan-input { flex: 1; background: transparent; border: none; border-bottom: 1px dashed var(--border); color: var(--text); font-size: 12px; font-family: var(--sans); padding: 2px 4px; outline: none; min-width: 0; }
+  .pcard-plan-input::placeholder { color: var(--text2); opacity: 0.5; font-size: 11px; }
+  .pcard-plan-input:focus { border-bottom-color: var(--accent); }
+  body.editor-locked .pcard-plan-input { pointer-events: none; opacity: 1; }
+  .pcard-tick { width: 28px; height: 28px; flex-shrink: 0; border-radius: 6px; border: 1.5px solid var(--border); background: transparent; color: var(--text); font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .pcard-tick:active { transform: scale(0.92); }
+  .pcard-tick.ticked { background: var(--success); border-color: var(--success); color: #fff; }
+  #planner-cards-empty { text-align: center; padding: 40px 20px; color: var(--text2); font-size: 13px; }
 
   /* Schedule - stack cards vertically */
   #schedule-section .section-body { flex-direction: column; overflow-y: auto; padding: 12px; }
@@ -214,6 +216,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); }
 
   /* Settings - full width */
   #settings-section .section-body { max-width: 100%; padding: 16px 14px; }
+  .settings-inner { max-width: 100%; }
   .settings-label { width: 130px; font-size: 12px; }
 
   /* Modals - bottom sheet style */
@@ -439,7 +442,8 @@ body.editor-locked .plan-input:hover { border-color: transparent; background: tr
 /* ============================================================
    SETTINGS
    ============================================================ */
-#settings-section .section-body { padding: 22px 20px; flex: 1; overflow-y: auto; max-width: 520px; }
+#settings-section .section-body { padding: 22px 20px; flex: 1; overflow-y: auto; }
+.settings-inner { max-width: 640px; width: 100%; }
 .settings-group { margin-bottom: 26px; }
 .settings-group-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); margin-bottom: 14px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
 .settings-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
@@ -667,6 +671,10 @@ input, textarea, .plan-input { user-select: text; -webkit-user-select: text; }
       <div id="topbar-date"></div>
     </div>
     <div id="topbar-actions">
+      <div id="conn-status" title="Connection status">
+        <span id="conn-dot"></span>
+        <span id="conn-label">Online</span>
+      </div>
       <button class="icon-btn" id="fullscreen-btn" title="Toggle Fullscreen">⛶</button>
       <button class="icon-btn" id="theme-toggle-btn" title="Toggle theme">🌙</button>
       <button class="icon-btn" id="editor-toggle-btn" title="Toggle Editor Mode (Ctrl+Shift+E)">🔒</button>
@@ -713,6 +721,7 @@ input, textarea, .plan-input { user-select: text; -webkit-user-select: text; }
             </thead>
             <tbody id="planner-tbody"></tbody>
           </table>
+          <div id="planner-cards"></div>
         </div>
       </div>
 
@@ -826,7 +835,7 @@ input, textarea, .plan-input { user-select: text; -webkit-user-select: text; }
           <div class="section-sub">Configure preferences and manage data</div>
         </div>
         <div class="section-body">
-          <div class="settings-group">
+          <div class="settings-inner">
             <div class="settings-group-title">Exam Configuration <span style="color:var(--danger);font-size:10px;">EDITOR ONLY</span></div>
             <div class="settings-row editor-only">
               <label class="settings-label">Exam Date<span class="lock-note">Regenerates planner</span></label>
@@ -875,6 +884,7 @@ input, textarea, .plan-input { user-select: text; -webkit-user-select: text; }
               <button class="btn btn-surface" id="logout-btn" style="border-color:var(--danger);color:var(--danger);">↩ Sign Out</button>
             </div>
           </div>
+          </div><!-- /.settings-inner -->
         </div>
       </div>
 
@@ -1170,9 +1180,15 @@ let openSubjects = new Set();
 // DATA
 // ============================================================
 function defaultData() {
-  const today = toDateStr(new Date());
+  // Inline date calc — toDateStr not yet defined at this point
+  const now   = new Date();
+  const pad   = n => String(n).padStart(2,'0');
+  const today = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate());
+  // Exam date: 4 months from today by default
+  const exam  = new Date(now.getFullYear(), now.getMonth()+4, now.getDate());
+  const examD = exam.getFullYear()+'-'+pad(exam.getMonth()+1)+'-'+pad(exam.getDate());
   return {
-    settings: { examDate:'2026-09-01', plannerStartDate:today, theme:'dark' },
+    settings: { examDate: examD, plannerStartDate: today, theme:'dark' },
     subjects: SUBJECTS.map(id => ({ id, name:SUBJECT_LABELS[id], chapters:[] })),
     planner: [],
     tests: [],
@@ -1181,18 +1197,9 @@ function defaultData() {
 }
 
 // ============================================================
-// FIREBASE AUTH & DATA STATE
+// DATA  (localStorage — Firebase integration pending)
 // ============================================================
-let currentUser = null;
-let saveDebounceTimer = null;
-
-function sanitizeForFirestore(obj) {
-  // Firestore cannot store undefined values - replace with null
-  return JSON.parse(JSON.stringify(obj, (k,v) => v === undefined ? null : v));
-}
-
 function loadData() {
-  // Fallback: load from localStorage cache while Firebase syncs
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     data = raw ? JSON.parse(raw) : defaultData();
@@ -1201,49 +1208,28 @@ function loadData() {
 }
 
 function normalizeData() {
-  if (!data.settings) data.settings = defaultData().settings;
-  if (!data.subjects) data.subjects = defaultData().subjects;
-  if (!data.planner) data.planner = [];
-  if (!data.tests) data.tests = [];
-  if (!data.schedules) data.schedules = defaultData().schedules;
+  const def = defaultData();
+  if (!data.settings) data.settings = def.settings;
+  // Guard individual settings fields so a partial object still works
+  if (!data.settings.plannerStartDate) data.settings.plannerStartDate = def.settings.plannerStartDate;
+  if (!data.settings.examDate)         data.settings.examDate         = def.settings.examDate;
+  if (!data.settings.theme)            data.settings.theme            = 'dark';
+  // Auto-fix swapped dates (start >= exam → reset to sane defaults)
+  if (data.settings.plannerStartDate >= data.settings.examDate) {
+    data.settings.plannerStartDate = def.settings.plannerStartDate;
+    data.settings.examDate         = def.settings.examDate;
+  }
+  if (!data.subjects) data.subjects = def.subjects;
+  if (!data.planner)  data.planner  = [];
+  if (!data.tests)    data.tests    = [];
+  if (!data.schedules) data.schedules = def.schedules;
   SCHED_KEYS.forEach(k => { if (!data.schedules[k]) data.schedules[k] = {slots:[]}; });
 }
 
-async function loadDataFromFirestore(uid) {
-  try {
-    const snap = await window._fbGetDoc(uid);
-    if (snap.exists()) {
-      data = snap.data();
-      normalizeData();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    } else {
-      // First time this user logs in — initialize with defaults
-      data = defaultData();
-      await window._fbSetDoc(uid, sanitizeForFirestore(data));
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    }
-  } catch(e) {
-    // Offline — use cached localStorage data
-    console.warn('Firestore load failed (offline?), using cache:', e.message);
-    loadData();
-  }
-}
-
 function saveData() {
-  // Always write to localStorage immediately (offline safety)
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  // Debounce Firestore writes to avoid hammering on rapid changes
-  clearTimeout(saveDebounceTimer);
-  saveDebounceTimer = setTimeout(() => {
-    if (currentUser) {
-      window._fbSetDoc(currentUser.uid, sanitizeForFirestore(data)).catch(e => {
-        console.warn('Firestore save failed (offline?):', e.message);
-      });
-    }
-  }, 800);
 }
 
-// ============================================================
 // DATE UTILS
 // ============================================================
 function toDateStr(d) { return d.toISOString().split('T')[0]; }
@@ -1307,7 +1293,7 @@ function confirmEditorPassword() {
   if(pw===EDITOR_PASSWORD){closeEditorModal();setEditorMode(true);}
   else {
     const inp=document.getElementById('editor-pw-input');
-    document.getElementById('editor-pw-error').textContent='Incorrect password. Try again.';
+    document.getElementById('editor-pw-error').textContent='Nice try. Wrong password though 🙃';
     inp.classList.add('shake'); setTimeout(()=>inp.classList.remove('shake'),400);
   }
 }
@@ -1318,8 +1304,8 @@ function confirmEditorPassword() {
 function updateTopBar() {
   const days=daysUntil(data.settings.examDate), el=document.getElementById('days-remaining');
   if(days>0) el.textContent=days+' Days Remaining';
-  else if(days===0) el.textContent='Exam Day Today! 🎓';
-  else el.textContent='Exam Passed';
+  else if(days===0) el.textContent='Exam Day Today! You\'ve got this 💪';
+  else el.textContent='Exam\'s done! Results await 🤞';
   el.style.color=days<=30?'var(--danger)':days<=90?'var(--warning)':'var(--text)';
   document.getElementById('topbar-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 }
@@ -1353,63 +1339,149 @@ let plannerScrolledToToday = false;
 // ============================================================
 // PLANNER RENDER
 // ============================================================
+function isMobile() { return window.innerWidth <= 768; }
+
 function renderPlanner() {
-  const tbody=document.getElementById('planner-tbody');
-  tbody.innerHTML='';
-  const dates=getAllPlannerDates(), today=getTodayStr();
-  if(dates.length===0){ tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text2);">No planner data. Set start and exam dates in Settings.</td></tr>'; return; }
+  const mobile = isMobile();
+  const tbody  = document.getElementById('planner-tbody');
+  const cards  = document.getElementById('planner-cards');
+  const table  = document.getElementById('planner-table');
 
-  dates.forEach(date=>{
-    const row=getOrCreatePlannerRow(date);
-    const tr=document.createElement('tr');
-    tr.className='planner-row'+(isSunday(date)?' is-sunday':'')+(date===today?' is-today':'');
+  // JS owns display — not CSS
+  table.style.display = mobile ? 'none' : '';
+  cards.style.display = mobile ? 'flex' : 'none';
 
-    // Date
-    const dtd=document.createElement('td'); dtd.className='date-cell'; dtd.textContent=formatDateShort(date); tr.appendChild(dtd);
-    // Day
-    const daytd=document.createElement('td'); daytd.className='day-cell'; daytd.textContent=getDayNameShort(date); tr.appendChild(daytd);
+  tbody.innerHTML = '';
+  cards.innerHTML = '';
 
-    // Subject cells: plan input + tick
-    SUBJECTS.forEach(subj=>{
-      const td=document.createElement('td');
-      const cell=document.createElement('div'); cell.className='subj-cell';
+  const dates   = getAllPlannerDates(), today = getTodayStr();
+  const emptyMsg = "Nothing here yet! Set your dates in Settings and let&#39;s get to work &#128197;";
 
-      const inp=document.createElement('input'); inp.type='text'; inp.className='plan-input';
-      inp.value=row.plans[subj]||''; inp.placeholder='Plan…';
-      inp.addEventListener('change',()=>{ row.plans[subj]=inp.value; saveData(); });
-      inp.addEventListener('blur',()=>{ row.plans[subj]=inp.value; saveData(); });
-      inp.addEventListener('keydown', e => { if(e.key==='Enter'){ row.plans[subj]=inp.value; saveData(); inp.blur(); } });
+  if (dates.length === 0) {
+    if (mobile) {
+      cards.innerHTML = '<div id="planner-cards-empty">' + emptyMsg + '</div>';
+    } else {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text2);">' + emptyMsg + '</td></tr>';
+    }
+    return;
+  }
 
-      const btn=document.createElement('button');
-      btn.className='tick-btn'+(row.ticks[subj]?' ticked':'');
-      btn.textContent=row.ticks[subj]?'✓':'';
-      btn.title=(row.ticks[subj]?'Untick':'Tick')+' '+SUBJECT_LABELS[subj];
-      btn.addEventListener('click',()=>{
-        row.ticks[subj]=!row.ticks[subj]; saveData();
-        btn.className='tick-btn'+(row.ticks[subj]?' ticked':'');
-        btn.textContent=row.ticks[subj]?'✓':'';
-        if(currentSection==='metrics') renderMetrics();
+  dates.forEach(date => {
+    const row     = getOrCreatePlannerRow(date);
+    const isSun   = isSunday(date);
+    const isToday = date === today;
+
+    if (mobile) {
+      // CARD layout
+      const card = document.createElement('div');
+      card.className = 'pcard' + (isSun ? ' is-sunday' : '') + (isToday ? ' is-today' : '');
+
+      const hdr = document.createElement('div');
+      hdr.className = 'pcard-header';
+      const left = document.createElement('div');
+      left.style.cssText = 'display:flex;align-items:center;gap:8px;';
+      const ds = document.createElement('span'); ds.className = 'pcard-date'; ds.textContent = formatDateShort(date);
+      const dy = document.createElement('span'); dy.className = 'pcard-day';  dy.textContent = getDayNameShort(date);
+      left.append(ds, dy);
+
+      const bulk = document.createElement('button');
+      bulk.className = 'pcard-bulk'; bulk.textContent = 'All ✓';
+      bulk.addEventListener('click', () => {
+        const allT = SUBJECTS.every(s => row.ticks[s]);
+        SUBJECTS.forEach(s => { row.ticks[s] = !allT; });
+        saveData(); renderPlanner();
+        if (currentSection === 'metrics') renderMetrics();
+      });
+      hdr.append(left, bulk);
+      card.appendChild(hdr);
+
+      SUBJECTS.forEach(subj => {
+        const wrap = document.createElement('div');
+        wrap.className = 'pcard-subj-row';
+
+        const lbl = document.createElement('span');
+        lbl.className = 'pcard-subj-label';
+        lbl.textContent = SUBJECT_LABELS[subj];
+
+        const inp = document.createElement('input');
+        inp.type = 'text'; inp.className = 'pcard-plan-input';
+        inp.value = row.plans[subj] || ''; inp.placeholder = 'Plan…';
+        inp.addEventListener('change', () => { row.plans[subj] = inp.value; saveData(); });
+        inp.addEventListener('blur',   () => { row.plans[subj] = inp.value; saveData(); });
+        inp.addEventListener('keydown', e => {
+          if (e.key === 'Enter') { row.plans[subj] = inp.value; saveData(); inp.blur(); }
+        });
+
+        const tick = document.createElement('button');
+        tick.className = 'pcard-tick' + (row.ticks[subj] ? ' ticked' : '');
+        tick.textContent = row.ticks[subj] ? '✓' : '';
+        tick.addEventListener('click', () => {
+          row.ticks[subj] = !row.ticks[subj]; saveData();
+          tick.className = 'pcard-tick' + (row.ticks[subj] ? ' ticked' : '');
+          tick.textContent = row.ticks[subj] ? '✓' : '';
+          if (currentSection === 'metrics') renderMetrics();
+        });
+
+        wrap.append(lbl, inp, tick);
+        card.appendChild(wrap);
       });
 
-      cell.append(inp,btn); td.appendChild(cell); tr.appendChild(td);
-    });
+      cards.appendChild(card);
 
-    // All ✓ — ticks all if any unticked; unticks all only if ALL are already ticked
-    const atd=document.createElement('td');
-    const abtn=document.createElement('button'); abtn.className='bulk-btn'; abtn.textContent='All ✓';
-    abtn.addEventListener('click',()=>{
-      const allT=SUBJECTS.every(s=>row.ticks[s]);
-      SUBJECTS.forEach(s=>{ row.ticks[s]=!allT; }); saveData(); renderPlanner();
-      if(currentSection==='metrics') renderMetrics();
-    });
-    atd.appendChild(abtn); tr.appendChild(atd);
-    tbody.appendChild(tr);
+    } else {
+      // TABLE layout (desktop — unchanged)
+      const tr = document.createElement('tr');
+      tr.className = 'planner-row' + (isSun ? ' is-sunday' : '') + (isToday ? ' is-today' : '');
+
+      const dtd   = document.createElement('td'); dtd.className  = 'date-cell'; dtd.textContent  = formatDateShort(date);   tr.appendChild(dtd);
+      const daytd = document.createElement('td'); daytd.className = 'day-cell'; daytd.textContent = getDayNameShort(date); tr.appendChild(daytd);
+
+      SUBJECTS.forEach(subj => {
+        const td   = document.createElement('td');
+        const cell = document.createElement('div'); cell.className = 'subj-cell';
+
+        const inp = document.createElement('input'); inp.type = 'text'; inp.className = 'plan-input';
+        inp.value = row.plans[subj] || ''; inp.placeholder = 'Plan…';
+        inp.addEventListener('change', () => { row.plans[subj] = inp.value; saveData(); });
+        inp.addEventListener('blur',   () => { row.plans[subj] = inp.value; saveData(); });
+        inp.addEventListener('keydown', e => {
+          if (e.key === 'Enter') { row.plans[subj] = inp.value; saveData(); inp.blur(); }
+        });
+
+        const btn = document.createElement('button');
+        btn.className = 'tick-btn' + (row.ticks[subj] ? ' ticked' : '');
+        btn.textContent = row.ticks[subj] ? '✓' : '';
+        btn.title = (row.ticks[subj] ? 'Untick' : 'Tick') + ' ' + SUBJECT_LABELS[subj];
+        btn.addEventListener('click', () => {
+          row.ticks[subj] = !row.ticks[subj]; saveData();
+          btn.className = 'tick-btn' + (row.ticks[subj] ? ' ticked' : '');
+          btn.textContent = row.ticks[subj] ? '✓' : '';
+          if (currentSection === 'metrics') renderMetrics();
+        });
+        cell.append(inp, btn); td.appendChild(cell); tr.appendChild(td);
+      });
+
+      const atd  = document.createElement('td');
+      const abtn = document.createElement('button'); abtn.className = 'bulk-btn'; abtn.textContent = 'All ✓';
+      abtn.addEventListener('click', () => {
+        const allT = SUBJECTS.every(s => row.ticks[s]);
+        SUBJECTS.forEach(s => { row.ticks[s] = !allT; }); saveData(); renderPlanner();
+        if (currentSection === 'metrics') renderMetrics();
+      });
+      atd.appendChild(abtn); tr.appendChild(atd);
+      tbody.appendChild(tr);
+    }
   });
 
-  // Auto-scroll to today only on first load
-  if(!plannerScrolledToToday){
-    const todayRow=tbody.querySelector('.is-today');
-    if(todayRow){ setTimeout(()=>todayRow.scrollIntoView({block:'center',behavior:'smooth'}),100); plannerScrolledToToday=true; }
+  // Auto-scroll to today on first load
+  if (!plannerScrolledToToday) {
+    const todayEl = mobile
+      ? cards.querySelector('.pcard.is-today')
+      : tbody.querySelector('.is-today');
+    if (todayEl) {
+      setTimeout(() => todayEl.scrollIntoView({ block: 'center', behavior: 'smooth' }), 100);
+      plannerScrolledToToday = true;
+    }
   }
 }
 
@@ -1487,7 +1559,7 @@ function saveTestEdit() {
   t.confidence = testEditConfidenceVal;
   t.comment = document.getElementById('te-comment').value.trim();
   saveData(); closeTestEditModal(); renderTestTable();
-  showToast('Test record updated ✓','success');
+  showToast('Updated! Glow-up applied ✨','success');
 }
 
 function openTestModal() {
@@ -1508,7 +1580,7 @@ function updateTestStars(val) {
 }
 function saveTestRecord() {
   const date=document.getElementById('tf-date').value;
-  if(!date){ showToast('Please select a date','error'); return; }
+  if(!date){ showToast('When did this exam happen? Pick a date 📆','error'); return; }
   data.tests.push({
     id:'t'+Date.now(),
     date,
@@ -1520,7 +1592,7 @@ function saveTestRecord() {
     comment:document.getElementById('tf-comment').value.trim()
   });
   saveData(); closeTestModal(); renderTestTable();
-  showToast('Test record saved ✓','success');
+  showToast('Test logged! Every attempt counts 📝','success');
 }
 
 // ============================================================
@@ -1702,7 +1774,7 @@ function renderMetrics() {
 
   const pct=total>0?Math.round((totalTicked/total)*100):0;
   document.getElementById('donut-pct').textContent=pct+'%';
-  document.getElementById('donut-ticks').textContent=total>0?(totalTicked+' / '+total+' ticks'):'No planner data yet';
+  document.getElementById('donut-ticks').textContent=total>0?(totalTicked+' / '+total+' ticks'):'No data yet — go tick something! 🎯';
   drawDonut(pct);
 
   const barsEl=document.getElementById('subj-bars'); barsEl.innerHTML='';
@@ -1806,10 +1878,15 @@ function saveSettings() {
   if(!editorUnlocked) return;
   const ed=document.getElementById('setting-exam-date').value;
   const sd=document.getElementById('setting-start-date').value;
-  if(ed) data.settings.examDate=ed;
-  if(sd) data.settings.plannerStartDate=sd;
-  saveData(); updateTopBar(); renderPlanner();
-  showToast('Settings saved ✓','success');
+  if(!ed||!sd){ showToast('Both dates please — can\'t build a planner from thin air 📅','error'); return; }
+  if(sd>=ed){ showToast('Bro, you can\'t study after the exam 💀 Fix those dates.','error'); return; }
+  data.settings.examDate=ed;
+  data.settings.plannerStartDate=sd;
+  saveData();
+  updateTopBar();
+  plannerScrolledToToday = false;
+  renderPlanner();
+  showToast('Done! Settings locked in 🔧','success');
 }
 
 // ============================================================
@@ -1820,7 +1897,7 @@ function exportData() {
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a'); a.href=url; a.download='jgsuffu-backup-'+today+'.json'; a.click();
-  URL.revokeObjectURL(url); showToast('Data exported ✓','success');
+  URL.revokeObjectURL(url); showToast('Backed up! Smart move 💾','success');
 }
 function handleImportFile(e) {
   const file=e.target.files[0]; if(!file) return;
@@ -1830,8 +1907,8 @@ function confirmImport() {
   if(!pendingImportFile) return;
   const reader=new FileReader();
   reader.onload=e=>{
-    try{ data=JSON.parse(e.target.result); if(!data.tests)data.tests=[]; saveData(); renderAll(); showToast('Data imported successfully ✓','success'); }
-    catch{ showToast('Invalid JSON file','error'); }
+    try{ data=JSON.parse(e.target.result); if(!data.tests)data.tests=[]; saveData(); renderAll(); showToast('Data imported! Welcome back to the grind 💪','success'); }
+    catch{ showToast('That file is cooked 🤌 Not valid JSON.','error'); }
     pendingImportFile=null; document.getElementById('import-modal').classList.remove('show');
   };
   reader.readAsText(pendingImportFile);
@@ -1876,7 +1953,7 @@ function doClearUserData() {
   data.tests = [];
   data.subjects.forEach(subj => subj.chapters.forEach(ch => { ch.difficulty = 3; ch.confidence = 3; }));
   saveData(); openSubjects.clear(); renderAll();
-  showToast('User data cleared.', 'info');
+  showToast('Poof! User data gone. Fresh slate 🧹','info');
 }
 function doClearAllData() {
   data = defaultData();
@@ -1886,7 +1963,7 @@ function doClearAllData() {
   document.getElementById('editor-badge').textContent = '🔒 LOCKED';
   document.getElementById('editor-toggle-btn').textContent = '🔒';
   renderAll();
-  showToast('All data erased. Fresh start.', 'info');
+  showToast('Everything wiped. Time to rebuild, king 👑','info');
 }
 
 function setupClearDataEvents() {
@@ -1942,7 +2019,7 @@ function setStep2Sub() {
 function advanceClearStep2() {
   const val = document.getElementById('clear-confirm-text').value.trim().toUpperCase();
   if (val !== 'DELETE') {
-    document.getElementById('clear-step2-error').textContent = 'Type exactly DELETE (uppercase) to continue.';
+    document.getElementById('clear-step2-error').textContent = 'It\'s DELETE in caps, genius. Focus. 🔡';
     const inp = document.getElementById('clear-confirm-text');
     inp.classList.add('shake'); setTimeout(() => inp.classList.remove('shake'), 400);
     return;
@@ -1960,7 +2037,7 @@ function advanceClearStep2() {
 function advanceClearStep3b() {
   const pw = document.getElementById('clear-editor-pw').value;
   if (pw !== EDITOR_PASSWORD) {
-    document.getElementById('clear-step3b-error').textContent = 'Incorrect Editor password.';
+    document.getElementById('clear-step3b-error').textContent = 'That\'s not the password, smarty 🔐';
     const inp = document.getElementById('clear-editor-pw');
     inp.classList.add('shake'); setTimeout(() => inp.classList.remove('shake'), 400);
     return;
@@ -1971,6 +2048,31 @@ function advanceClearStep3b() {
 // ============================================================
 // FULLSCREEN
 // ============================================================
+// ============================================================
+// CONNECTION STATUS INDICATOR
+// States: 'online' | 'offline' | 'syncing'
+// 'syncing' will be driven by Firebase writes once integrated
+// ============================================================
+function setConnStatus(state) {
+  const el = document.getElementById('conn-status');
+  const lbl = document.getElementById('conn-label');
+  if (!el) return;
+  el.className = state;
+  if (state === 'online')  lbl.textContent = 'Online';
+  if (state === 'offline') lbl.textContent = 'Offline';
+  if (state === 'syncing') lbl.textContent = 'Syncing…';
+}
+
+function initConnStatus() {
+  setConnStatus(navigator.onLine ? 'online' : 'offline');
+  window.addEventListener('online',  () => setConnStatus('online'));
+  window.addEventListener('offline', () => setConnStatus('offline'));
+  // Firebase integration point:
+  // Call setConnStatus('syncing') before Firestore write
+  // Call setConnStatus('online')  after write resolves
+  // Call setConnStatus('offline') on write failure
+}
+
 function toggleFullscreen() {
   const btn = document.getElementById('fullscreen-btn');
   if (!document.fullscreenElement) {
@@ -2097,7 +2199,7 @@ function checkWeeklyBackupNudge() {
   const daysSince = Math.floor((parseDate(today) - parseDate(last)) / 86400000);
   if(daysSince >= 7) {
     localStorage.setItem('jgsuffu_last_backup_nudge', today);
-    setTimeout(()=>showToast('💾 It\'s been a week — consider exporting your data for backup!','info'), 3000);
+    setTimeout(()=>showToast('💾 A week gone by — maybe back up your data? Just saying 👀','info'), 3000);
   }
 }
 
@@ -2173,12 +2275,20 @@ function setupEvents() {
 }
 
 // ============================================================
-// LOGIN / LOGOUT
+// LOGIN / LOGOUT  (temporary hardcoded — Firebase pending)
 // ============================================================
+const TEMP_EMAIL    = 'mirsuffu@gmail.com';
+const TEMP_PASSWORD = 'mirsuffu';
+const SESSION_KEY   = 'jgsuffu_session';
+
+function isSessionActive() {
+  return localStorage.getItem(SESSION_KEY) === '1';
+}
+
 function showLoginScreen() {
   document.getElementById('login-screen').classList.add('show');
   document.getElementById('app').style.display = 'none';
-  setTimeout(()=>document.getElementById('login-email').focus(), 100);
+  setTimeout(() => document.getElementById('login-email').focus(), 120);
 }
 
 function hideLoginScreen() {
@@ -2189,91 +2299,83 @@ function hideLoginScreen() {
 function showLoginError(msg) {
   document.getElementById('login-error').textContent = msg;
   const inp = document.getElementById('login-password');
-  inp.classList.add('shake'); setTimeout(()=>inp.classList.remove('shake'), 400);
+  inp.classList.add('shake');
+  setTimeout(() => inp.classList.remove('shake'), 400);
 }
 
-async function handleLogin() {
-  const email = document.getElementById('login-email').value.trim();
+function handleLogin() {
+  const email    = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
-  const btn = document.getElementById('login-btn');
   document.getElementById('login-error').textContent = '';
-  if(!email || !password) { showLoginError('Please enter email and password.'); return; }
-  btn.disabled = true; btn.textContent = 'Signing in…';
-  try {
-    await window._fbSignIn(email, password);
-    // onAuthStateChanged handles the rest
-  } catch(e) {
-    btn.disabled = false; btn.textContent = 'Sign In';
-    if(e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
-      showLoginError('Access denied. Check your credentials.');
-    } else if(e.code === 'auth/too-many-requests') {
-      showLoginError('Too many attempts. Try again later.');
-    } else if(e.code === 'auth/network-request-failed') {
-      showLoginError('No internet connection.');
-    } else {
-      showLoginError('Sign in failed. Try again.');
-    }
+  if (!email || !password) { showLoginError('Bhai, fields are empty. Try harder. 😐'); return; }
+  if (email === TEMP_EMAIL && password === TEMP_PASSWORD) {
+    localStorage.setItem(SESSION_KEY, '1');
+    const emailEl = document.getElementById('settings-user-email');
+    if (emailEl) emailEl.textContent = email;
+    hideLoginScreen();
+  } else {
+    showLoginError('Nah nah, you can\'t bypass Suffu 😉');
   }
 }
 
-function openLogoutModal() { document.getElementById('logout-modal').classList.add('show'); }
+function openLogoutModal()  { document.getElementById('logout-modal').classList.add('show'); }
 function closeLogoutModal() { document.getElementById('logout-modal').classList.remove('show'); }
 
-async function confirmLogout() {
+function confirmLogout() {
+  localStorage.removeItem(SESSION_KEY);
   closeLogoutModal();
-  try {
-    await window._fbSignOut();
-  } catch(e) { console.warn('Sign out error:', e); }
-  // onAuthStateChanged will call showLoginScreen
+  document.getElementById('login-email').value    = '';
+  document.getElementById('login-password').value = '';
+  document.getElementById('login-error').textContent = '';
+  showLoginScreen();
 }
 
 function setupLoginEvents() {
   document.getElementById('login-btn').addEventListener('click', handleLogin);
-  document.getElementById('login-email').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-password').focus(); });
-  document.getElementById('login-password').addEventListener('keydown', e => { if(e.key==='Enter') handleLogin(); });
+  document.getElementById('login-email').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('login-password').focus();
+  });
+  document.getElementById('login-password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleLogin();
+  });
   document.getElementById('logout-btn').addEventListener('click', openLogoutModal);
   document.getElementById('logout-cancel-btn').addEventListener('click', closeLogoutModal);
   document.getElementById('logout-confirm-btn').addEventListener('click', confirmLogout);
-  document.getElementById('logout-modal').addEventListener('click', e => { if(e.target===document.getElementById('logout-modal')) closeLogoutModal(); });
+  document.getElementById('logout-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('logout-modal')) closeLogoutModal();
+  });
 }
 
 // ============================================================
 // INIT
 // ============================================================
 function init() {
-  // Show login screen immediately; Firebase will decide visibility
-  showLoginScreen();
-
   setupEvents();
   setupClearDataEvents();
   setupRightClickDisable();
   setupMobileTabs();
   setupLoginEvents();
+  initConnStatus();
+  loadData();
 
-  // Wait for Firebase auth to resolve
-  window._fbOnAuthStateChanged(async (user) => {
-    if (user) {
-      currentUser = user;
-      // Update settings display
-      const emailEl = document.getElementById('settings-user-email');
-      if(emailEl) emailEl.textContent = user.email;
-      // Reset login form
-      document.getElementById('login-btn').disabled = false;
-      document.getElementById('login-btn').textContent = 'Sign In';
-      document.getElementById('login-error').textContent = '';
-      // Load data from Firestore (falls back to localStorage if offline)
-      await loadDataFromFirestore(user.uid);
-      renderAll();
-      setInterval(updateTopBar, 60000);
-      checkWeeklyBackupNudge();
-      hideLoginScreen();
-      setTimeout(checkAndShowWelcome, 500);
-    } else {
-      // Not signed in
-      currentUser = null;
-      showLoginScreen();
-    }
+  // Re-render planner if viewport crosses mobile breakpoint (orientation change etc.)
+  let _lastMobile = window.innerWidth <= 768;
+  window.addEventListener('resize', () => {
+    const nowMobile = window.innerWidth <= 768;
+    if(nowMobile !== _lastMobile) { _lastMobile = nowMobile; if(currentSection==='planner') renderPlanner(); }
   });
+
+  if (isSessionActive()) {
+    const emailEl = document.getElementById('settings-user-email');
+    if (emailEl) emailEl.textContent = TEMP_EMAIL;
+    hideLoginScreen();
+    renderAll();
+    setInterval(updateTopBar, 60000);
+    checkWeeklyBackupNudge();
+    setTimeout(checkAndShowWelcome, 400);
+  } else {
+    showLoginScreen();
+  }
 }
 document.addEventListener('DOMContentLoaded', init);
 </script>
@@ -2299,7 +2401,7 @@ document.addEventListener('DOMContentLoaded', init);
     </div>
     <button class="login-btn" id="login-btn">Sign In</button>
     <div class="login-error" id="login-error"></div>
-    <div class="login-offline-note">📡 Works offline after first login</div>
+    <div class="login-offline-note">🔒 Temporary login — Firebase integration pending</div>
   </div>
 </div>
 
