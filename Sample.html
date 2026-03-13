@@ -81,13 +81,14 @@ window._fbSetDoc = (uid, d) => setDoc(doc(db, 'users', uid, 'data', 'appdata'), 
    RESET & BASE
    ============================================================ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-/* Smooth theme transition on all relevant elements */
-*, *::before, *::after {
-  transition: background-color 0.35s ease, border-color 0.35s ease, color 0.35s ease, box-shadow 0.35s ease;
-}
-/* Exclude transitions on elements where they'd look wrong */
-button, input, select, textarea, .tick-btn, .star, .star-pick, .nav-item, .icon-btn, canvas {
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease, transform 0.15s ease, opacity 0.15s ease, box-shadow 0.2s ease;
+/* Smooth theme transitions — targeted, not universal (universal breaks display:none) */
+#app, #topbar, #sidebar, #content, .section, .modal-box,
+.nav-item, .section-header, .metric-card, .schedule-card,
+.subject-block, .chapter-row, .slot-row, .planner-row td,
+#settings-section .section-body, .settings-group, .clear-scope-option,
+.toast, #editor-badge, .test-type-badge, .today-tick-item,
+.stat-pill, .conf-item, #welcome-box, .login-card {
+  transition: background-color 0.35s ease, border-color 0.35s ease, color 0.35s ease;
 }
 html, body { height: 100%; overflow: hidden; }
 body {
@@ -594,14 +595,15 @@ input, textarea, .plan-input { user-select: text; -webkit-user-select: text; }
    ============================================================ */
 #login-screen {
   display: none; position: fixed; inset: 0; z-index: 9999;
-  background: var(--bg); align-items: center; justify-content: center;
+  background: var(--bg, #000000); align-items: center; justify-content: center;
   flex-direction: column;
+  font-family: 'DM Sans', system-ui, sans-serif;
 }
 #login-screen.show { display: flex; }
 
 .login-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--surface, #111115);
+  border: 1px solid var(--border, #252530);
   border-radius: 20px;
   padding: 40px 44px 36px;
   width: 100%; max-width: 400px;
@@ -652,7 +654,7 @@ input, textarea, .plan-input { user-select: text; -webkit-user-select: text; }
 </head>
 <body class="editor-locked">
 
-<div id="app">
+<div id="app" style="display:none;">
 
   <!-- TOP BAR -->
   <div id="topbar">
@@ -1038,6 +1040,18 @@ input, textarea, .plan-input { user-select: text; -webkit-user-select: text; }
   </div>
 </div>
 
+
+<!-- Logout Confirmation Modal -->
+<div class="modal-overlay" id="logout-modal">
+  <div class="modal-box" style="max-width:340px;">
+    <div class="modal-title">👋 Sign Out?</div>
+    <div class="modal-sub">You'll need to sign in again on this device. Your data is safely stored in the cloud.</div>
+    <div class="modal-actions">
+      <button class="btn btn-surface" id="logout-cancel-btn">Cancel</button>
+      <button class="btn btn-danger" id="logout-confirm-btn">Yes, Sign Out</button>
+    </div>
+  </div>
+</div>
 <div id="toast-container"></div>
 
 <!-- Mobile bottom tab bar (hidden on desktop via CSS) -->
@@ -2289,17 +2303,6 @@ document.addEventListener('DOMContentLoaded', init);
   </div>
 </div>
 
-<!-- Logout Confirmation Modal -->
-<div class="modal-overlay" id="logout-modal">
-  <div class="modal-box" id="logout-modal-box">
-    <div class="modal-title">👋 Sign Out?</div>
-    <div class="modal-sub">You'll need to sign in again on this device. Your data is safely stored in the cloud.</div>
-    <div class="modal-actions">
-      <button class="btn btn-surface" id="logout-cancel-btn">Cancel</button>
-      <button class="btn btn-danger" id="logout-confirm-btn">Yes, Sign Out</button>
-    </div>
-  </div>
-</div>
 
 </body>
 </html>
