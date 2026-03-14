@@ -270,9 +270,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); }
   #content { overflow-y: auto; }
 
   /* Topbar - compact */
-  #topbar { padding: 0 12px; gap: 10px; height: 52px; min-height: 52px; }
-  #topbar-brand .brand-tag { display: block; font-size: 8.5px; max-width: 150px; white-space: normal; overflow: visible; line-height: 1.3; }
-  #topbar-brand .brand-name { font-size: 13px; }
+  #topbar { padding: 6px 12px; gap: 8px; min-height: 52px; height: auto; align-items: center; flex-wrap: nowrap; }
+  #topbar-brand .brand-tag { display: block; font-size: 8px; white-space: normal; line-height: 1.35; opacity: 0.85; }
+  #topbar-brand .brand-name { font-size: 12px; }
   #topbar-center { flex: 0 0 auto; }
   #days-remaining { font-size: 14px; }
   #topbar-date { display: block; font-size: 9px; }
@@ -315,11 +315,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); }
   .schedule-card { min-height: 160px; flex: none; }
 
   /* Metrics - vertical stack */
-  #metrics-section .section-body { display:flex !important; flex-direction:column !important; overflow-y:auto !important; overflow-x:hidden !important; gap:10px !important; padding:10px !important; grid-template-columns:unset !important; grid-template-rows:unset !important; }
+  #metrics-section { overflow: hidden !important; }
+  #metrics-section .section-body { display:flex !important; flex-direction:column !important; overflow-y:auto !important; overflow-x:hidden !important; gap:10px !important; padding:10px 10px 72px 10px !important; grid-template-columns:unset !important; grid-template-rows:unset !important; }
   .metric-card { min-height:100px; flex-shrink:0; }
-  .today-ticks-grid { grid-template-columns: 1fr 1fr; }
-  #metrics-section .section-body { padding-bottom: 20px !important; }
-  .metric-card:last-child { margin-bottom: 4px; }
+
   /* Test cards */
   #test-cards { display:flex; flex-direction:column; gap:10px; padding:10px; }
   .tcard { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
@@ -377,7 +376,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); }
 #editor-badge.unlocked { background: rgba(109,191,138,0.15); color: var(--success); }
 
 #content { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
-.section { display: none; flex: 1; overflow: hidden; flex-direction: column; }
+.section { display: none; flex: 1; overflow: hidden; flex-direction: column; min-height: 0; }
 .section.active { display: flex; }
 .section-header { padding: 14px 20px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .section-title { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
@@ -565,10 +564,10 @@ body.editor-locked .plan-input:hover { border-color: transparent; background: tr
 .stat-pill-num.accent { color: var(--accent); }
 .stat-pill-num.success { color: var(--success); }
 .stat-pill-num.danger { color: var(--danger); }
-.today-sched-label { font-size: 13px; color: var(--accent); font-weight: 600; margin-bottom: 8px; }
-.today-ticks-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; min-height: 80px; }
-.today-tick-item { background: var(--surface-el); border-radius: 8px; padding: 8px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 500; }
-.today-tick-item.ticked-today { background: rgba(109,191,138,0.12); }
+
+
+
+
 .today-tick-right { display: flex; align-items: center; gap: 6px; }
 
 /* ============================================================
@@ -779,7 +778,6 @@ input, textarea, .plan-input { user-select: text; -webkit-user-select: text; }
 .login-error { color: var(--danger); font-size: 12px; text-align: center; min-height: 18px; margin-top: 8px; }
 .whatsapp-btn { display:inline-flex; align-items:center; gap:8px; background:#25D366; color:#fff; font-family:var(--sans); font-size:13px; font-weight:600; padding:10px 20px; border-radius:24px; text-decoration:none; transition:transform 0.15s,box-shadow 0.15s; box-shadow:0 4px 14px rgba(37,211,102,0.35); }
 .whatsapp-btn:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(37,211,102,0.5); }
-.login-offline-note { font-size: 11px; color: var(--text2); text-align: center; margin-top: 14px; opacity: 0.7; }
 
 /* Logout confirmation modal */
 #logout-modal .modal-box { max-width: 340px; }
@@ -968,11 +966,7 @@ input, textarea, .plan-input { user-select: text; -webkit-user-select: text; }
             <div class="metric-title">Days vs Chapters</div>
             <div class="days-stats-grid" id="days-stats"></div>
           </div>
-          <div class="metric-card">
-            <div class="metric-title">Today's Focus</div>
-            <div class="today-sched-label" id="today-sched-label">—</div>
-            <div class="today-ticks-grid" id="today-ticks-grid"></div>
-          </div>
+
         </div>
       </div>
 
@@ -1354,6 +1348,13 @@ window._onAuthStateChanged = onAuthStateChanged;
 window._doc    = doc;
 window._getDoc = getDoc;
 window._setDoc = setDoc;
+
+// Boot app after SDK is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => init());
+} else {
+  init();
+}
 </script>
 <script>
 // ============================================================
@@ -1491,7 +1492,7 @@ function initPlannerScrollIndicator() {
   wrap.addEventListener('scroll', updateThumb, { passive: true });
 }
 // ============================================================
-// DATA  (localStorage — Firebase integration pending)
+// DATA
 // ============================================================
 async function loadData() {
   // 1. Always load from localStorage first (instant, works offline)
@@ -2253,30 +2254,6 @@ function renderMetrics() {
   const fl=data.subjects.reduce((a,s)=>a+s.chapters.filter(c=>c.difficulty>=3&&c.confidence<=2).length,0);
   document.getElementById('days-stats').innerHTML=`<div class="stat-pill"><div class="stat-pill-num accent">${Math.max(0,daysLeft)}</div><div class="stat-pill-label">Days Left</div></div><div class="stat-pill"><div class="stat-pill-num">${tc}</div><div class="stat-pill-label">Total Chapters</div></div><div class="stat-pill"><div class="stat-pill-num success">${tc-fl}</div><div class="stat-pill-label">Clear Chapters</div></div><div class="stat-pill"><div class="stat-pill-num danger">${fl}</div><div class="stat-pill-label">Flagged</div></div>`;
 
-  const dow=new Date().getDay();
-  document.getElementById('today-sched-label').textContent='📋 '+(dow===0?'Sundays':'All Days Except Sundays');
-  const ttg=document.getElementById('today-ticks-grid'); ttg.innerHTML='';
-  const todayRow=data.planner.find(r=>r.date===today);
-  const hasAnyPlan=SUBJECTS.some(s=>todayRow&&todayRow.plans&&todayRow.plans[s]);
-  SUBJECTS.forEach(s=>{
-    const ticked=todayRow&&todayRow.ticks[s];
-    const planText=todayRow&&todayRow.plans&&todayRow.plans[s]?todayRow.plans[s]:'';
-    const item=document.createElement('div'); item.className='today-tick-item'+(ticked?' ticked-today':'');
-    item.style.flexDirection='column'; item.style.alignItems='flex-start'; item.style.gap='4px';
-    const topRow=document.createElement('div'); topRow.style.cssText='display:flex;align-items:center;justify-content:space-between;width:100%;';
-    const lbl=document.createElement('span'); lbl.textContent=SUBJECT_LABELS[s]; lbl.style.fontWeight='600';
-    const right=document.createElement('div'); right.className='today-tick-right';
-    const btn=document.createElement('button');
-    btn.className='tick-btn'+(ticked?' ticked':''); btn.textContent=ticked?'✓':''; btn.style.width='24px'; btn.style.height='24px';
-    btn.addEventListener('click',()=>{ const row=getOrCreatePlannerRow(today); row.ticks[s]=!row.ticks[s]; saveData(); renderMetrics(); if(currentSection==='planner') renderPlanner(); });
-    right.appendChild(btn); topRow.append(lbl,right); item.appendChild(topRow);
-    if(planText){
-      const plan=document.createElement('div'); plan.textContent='📌 '+planText;
-      plan.style.cssText='font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;';
-      item.appendChild(plan);
-    }
-    ttg.appendChild(item);
-  });
 }
 
 function calcStreak() {
@@ -2771,18 +2748,9 @@ function setupEvents() {
 }
 
 // ============================================================
-// LOGIN / LOGOUT  (temporary hardcoded — Firebase pending)
+// LOGIN / LOGOUT
 // ============================================================
-// Firebase Auth (primary)
-// Fallback constants — remove after Firebase users created
-const TEMP_EMAIL    = 'mirsuffu@gmail.com';
-const TEMP_PASSWORD = 'mirsuffu';
-const SESSION_KEY   = 'jgsuffu_session'; // kept for offline fallback
-let   currentUser   = null; // Firebase user object
-
-function isSessionActive() {
-  return localStorage.getItem(SESSION_KEY) === '1';
-}
+let currentUser = null;
 
 function showLoginScreen() {
   document.getElementById('login-screen').classList.add('show');
@@ -2812,65 +2780,30 @@ function handleLogin() {
   const btn = document.getElementById('login-btn');
   btn.disabled = true; btn.textContent = 'Signing in...';
 
-  // ── Firebase Auth (primary) ───────────────────────────────
-  if (window._fbAuth && window._signInWithEmailAndPassword) {
-    window._signInWithEmailAndPassword(window._fbAuth, email, password)
-      .then(cred => {
-        loginAttempts = 0;
-        document.getElementById('login-help').style.display = 'none';
-        currentUser = cred.user;
-        localStorage.setItem(SESSION_KEY, '1');
-        const emailEl = document.getElementById('settings-user-email');
-        if (emailEl) emailEl.textContent = cred.user.email;
-        btn.disabled = false; btn.textContent = 'Sign In';
-        onLoginSuccess();
-      })
-      .catch(err => {
-        btn.disabled = false; btn.textContent = 'Sign In';
-        loginAttempts++;
-        const msg = err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential'
-          ? 'Nah nah, you can\'t bypass Suffu 😉'
-          : 'Login error: ' + (err.message || err.code);
-        showLoginError(msg);
-        if (loginAttempts >= 2) document.getElementById('login-help').style.display = 'block';
-      });
-  } else {
-    // Fallback: no Firebase loaded — localStorage auth
-    if (email === TEMP_EMAIL && password === TEMP_PASSWORD) {
+  window._signInWithEmailAndPassword(window._fbAuth, email, password)
+    .then(cred => {
       loginAttempts = 0;
       document.getElementById('login-help').style.display = 'none';
-      localStorage.setItem(SESSION_KEY, '1');
-      const emailEl = document.getElementById('settings-user-email');
-      if (emailEl) emailEl.textContent = email;
       btn.disabled = false; btn.textContent = 'Sign In';
-      onLoginSuccess();
-    } else {
+      // onAuthStateChanged will fire and handle the rest
+    })
+    .catch(err => {
       btn.disabled = false; btn.textContent = 'Sign In';
       loginAttempts++;
-      showLoginError('Nah nah, you can\'t bypass Suffu 😉');
+      const msg = (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential')
+        ? 'Nah nah, you can\'t bypass Suffu 😉'
+        : 'Login error: ' + (err.message || err.code);
+      showLoginError(msg);
       if (loginAttempts >= 2) document.getElementById('login-help').style.display = 'block';
-    }
-  }
-}
-
-function onLoginSuccess() {
-  // Load cloud data then show app
-  loadData().then(() => {
-    hideLoginScreen();
-    updateTopBar(); renderAll();
-    setTimeout(() => { checkAndShowWelcome(); }, 400);
-  });
+    });
 }
 
 function openLogoutModal()  { document.getElementById('logout-modal').classList.add('show'); }
 function closeLogoutModal() { document.getElementById('logout-modal').classList.remove('show'); }
 
 function confirmLogout() {
-  if (window._fbAuth && window._signOut && window._fbAuth.currentUser) {
-    window._signOut(window._fbAuth).catch(() => {});
-  }
+  window._signOut(window._fbAuth).catch(() => {});
   currentUser = null;
-  localStorage.removeItem(SESSION_KEY);
   closeLogoutModal();
   document.getElementById('login-email').value    = '';
   document.getElementById('login-password').value = '';
@@ -2904,28 +2837,47 @@ function init() {
   setupMobileTabs();
   setupLoginEvents();
   initConnStatus();
-  loadData();
 
-  // Re-render planner if viewport crosses mobile breakpoint (orientation change etc.)
+  // Re-render on viewport breakpoint cross (orientation change etc.)
   let _lastMobile = window.innerWidth <= 768;
   window.addEventListener('resize', () => {
     const nowMobile = window.innerWidth <= 768;
-    if(nowMobile !== _lastMobile) { _lastMobile=nowMobile; if(currentSection==='planner')renderPlanner(); if(currentSection==='test')renderTestTable(); if(currentSection==='subjects')renderSubjectsInternal(); }
+    if (nowMobile !== _lastMobile) {
+      _lastMobile = nowMobile;
+      if (currentSection === 'planner')   renderPlanner();
+      if (currentSection === 'test')      renderTestTable();
+      if (currentSection === 'subjects')  renderSubjectsInternal();
+    }
   });
 
-  if (isSessionActive()) {
-    const emailEl = document.getElementById('settings-user-email');
-    if (emailEl) emailEl.textContent = TEMP_EMAIL;
-    hideLoginScreen();
-    renderAll();
-    setInterval(updateTopBar, 60000);
-    checkWeeklyBackupNudge();
-    setTimeout(checkAndShowWelcome, 400);
-  } else {
-    showLoginScreen();
-  }
+  // Firebase auth state is the single gate — fires on page load automatically
+  window._onAuthStateChanged(window._fbAuth, async (user) => {
+    if (user) {
+      currentUser = user;
+      const emailEl = document.getElementById('settings-user-email');
+      if (emailEl) emailEl.textContent = user.email;
+      await loadData();
+      applyTheme(data.settings.theme);
+      hideLoginScreen();
+      updateTopBar();
+      renderAll();
+      setInterval(updateTopBar, 60000);
+      checkWeeklyBackupNudge();
+      setTimeout(checkAndShowWelcome, 400);
+    } else {
+      currentUser = null;
+      // Load defaults for theme before showing login
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        data = raw ? JSON.parse(raw) : defaultData();
+        normalizeData();
+      } catch(e) { data = defaultData(); }
+      applyTheme(data.settings.theme);
+      showLoginScreen();
+    }
+  });
 }
-document.addEventListener('DOMContentLoaded', init);
+// init() is called by the Firebase module script after SDK is ready
 </script>
 
 <!-- ============================================================
@@ -2953,7 +2905,6 @@ document.addEventListener('DOMContentLoaded', init);
       <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Forget Password or Register Account or any login related issue???</div>
       <a href="https://wa.me/919422872892?text=Hey%20Suffu%2C%20I%20came%20to%20you%20regarding%20your%20CA%20Foundation%20App%2C%20I%20really%20need%20your%20help..." target="_blank" class="whatsapp-btn" id="login-wa-btn">💬 Ask Suffu on WhatsApp</a>
     </div>
-    <div class="login-offline-note">🔒 Temporary login — Firebase integration pending</div>
   </div>
 </div>
 
