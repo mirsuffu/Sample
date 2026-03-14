@@ -729,12 +729,12 @@ input, textarea, .plan-input { user-select: text; -webkit-user-select: text; }
    LOGIN SCREEN
    ============================================================ */
 #login-screen {
-  display: none; position: fixed; inset: 0; z-index: 9999;
+  display: flex; position: fixed; inset: 0; z-index: 9999;
   background: var(--bg, #000000); align-items: center; justify-content: center;
   flex-direction: column;
   font-family: 'DM Sans', system-ui, sans-serif;
 }
-#login-screen.show { display: flex; }
+#login-screen.hidden { display: none; }
 
 .login-card {
   background: var(--surface, #111115);
@@ -1320,8 +1320,8 @@ input, textarea, .plan-input { user-select: text; -webkit-user-select: text; }
 import { initializeApp }                        from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword,
          signOut, onAuthStateChanged }           from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js';
-import { getFirestore, doc, getDoc,
-         setDoc, enableIndexedDbPersistence }    from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js';
+import { initializeFirestore, persistentLocalCache,
+         doc, getDoc, setDoc }                  from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey:            "AIzaSyBkJltAH3yQbxTa8cwbN_PleySVCJBDUS4",
@@ -1334,10 +1334,8 @@ const firebaseConfig = {
 
 const fbApp  = initializeApp(firebaseConfig);
 const fbAuth = getAuth(fbApp);
-const fbDb   = getFirestore(fbApp);
-
-// Enable offline persistence (IndexedDB)
-enableIndexedDbPersistence(fbDb).catch(() => {});
+// initializeFirestore with persistent cache (replaces deprecated enableIndexedDbPersistence)
+const fbDb   = initializeFirestore(fbApp, { localCache: persistentLocalCache() });
 
 // Make available globally
 window._fbAuth = fbAuth;
@@ -2753,13 +2751,13 @@ function setupEvents() {
 let currentUser = null;
 
 function showLoginScreen() {
-  document.getElementById('login-screen').classList.add('show');
+  document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('app').style.display = 'none';
   setTimeout(() => document.getElementById('login-email').focus(), 120);
 }
 
 function hideLoginScreen() {
-  document.getElementById('login-screen').classList.remove('show');
+  document.getElementById('login-screen').classList.add('hidden');
   document.getElementById('app').style.display = '';
 }
 
@@ -2841,6 +2839,7 @@ function init() {
   // Re-render on viewport breakpoint cross (orientation change etc.)
   let _lastMobile = window.innerWidth <= 768;
   window.addEventListener('resize', () => {
+    if (!currentUser) return; // never render if not authenticated
     const nowMobile = window.innerWidth <= 768;
     if (nowMobile !== _lastMobile) {
       _lastMobile = nowMobile;
